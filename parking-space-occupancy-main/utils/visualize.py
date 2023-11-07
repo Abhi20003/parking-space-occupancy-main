@@ -76,6 +76,7 @@ def plot_ds_image(image, rois, occupancy, true_occupancy=None, fname=None, show=
     polygons = []
     colors = occupancy_colors(occupancy.cpu().numpy())
     for roi, color in zip(rois, colors):
+        print(color)
         polygon = Polygon(roi, fc=color, alpha=0.3)
         polygons.append(polygon)
     p = PatchCollection(polygons, match_original=True)
