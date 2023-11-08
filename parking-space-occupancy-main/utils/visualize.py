@@ -77,8 +77,7 @@ def plot_ds_image(image, rois, occupancy, true_occupancy=None, fname=None, show=
     count = 0
     colors = occupancy_colors(occupancy.cpu().numpy())
     for roi, color in zip(rois, colors):
-        # print(type(color))
-        if (color == np.array([0,1,0])).all():
+        if (color.round(0) == np.array([0,1,0])).all():
             count+=1
         polygon = Polygon(roi, fc=color, alpha=0.3)
         polygons.append(polygon)
