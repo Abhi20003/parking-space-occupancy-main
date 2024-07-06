@@ -30,7 +30,6 @@ class FasterRCNN_FPN(nn.Module):
         self.class_head = ClassificationHead(in_channels)
         
         # load coco weights
-        # url taken from: https://github.com/pytorch/vision/blob/master/torchvision/models/detection/faster_rcnn.py
         weights_url = 'https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth'
         state_dict = load_state_dict_from_url(weights_url, progress=False)
         self.load_state_dict(state_dict, strict=False)

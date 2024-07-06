@@ -2,6 +2,7 @@ import torch
 import torchvision
 import numpy as np
 import matplotlib.pyplot as plt
+import tensorflow as tf
 
 from matplotlib.patches import Polygon
 from matplotlib.collections import PatchCollection, LineCollection
@@ -74,21 +75,27 @@ def plot_ds_image(image, rois, occupancy, true_occupancy=None, fname=None, show=
     
     # plot annotations
     polygons = []
-    count = 0
+    positives = 0
+    negatives = 0
+    falsePositives = 0
+    falseNegatives = 0
+    wrong_pred = 0
     colors = occupancy_colors(occupancy.cpu().numpy())
     for roi, color in zip(rois, colors):
         if (color.round(0) == np.array([0,1,0])).all():
-            count+=1
+            positives+=1
+        else:
+            negatives+=1
         polygon = Polygon(roi, fc=color, alpha=0.3)
         polygons.append(polygon)
     p = PatchCollection(polygons, match_original=True)
     ax.add_collection(p)
-    print(count)
     
     # plot prediction
     if true_occupancy is not None:
-        # only show those crosses where the predictions are incorrect
+        # # only show those crosses where the predictions are incorrect
         pred_inc = occupancy.round() != true_occupancy
+        # print(pred_inc)
         rois_subset = rois[pred_inc]
         ann_subset = true_occupancy[pred_inc]
         
@@ -100,6 +107,11 @@ def plot_ds_image(image, rois, occupancy, true_occupancy=None, fname=None, show=
         colors = np.repeat(colors, 2, axis=0)
         lc = LineCollection(lines, colors=colors, lw=1)
         ax.add_collection(lc)
+        wrong_pred = torch.count_nonzero(pred_inc).item()
+    # print(wrong_pred)
     
     # save figure
     save_fig(fig, fname, show)
+    count = positives+negatives
+    accuracy = 1-(wrong_pred/count)
+    return accuracy, count

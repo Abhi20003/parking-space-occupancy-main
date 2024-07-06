@@ -1,35 +1,85 @@
 import os
-import torch
+import io
+import json
+import requests
+import zipfile
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 
-from dataset import acpds
-from utils.engine import train_model
-from models.rcnn import RCNN
-from models.faster_rcnn_fpn import FasterRCNN_FPN
+from collections import defaultdict
+from collections import namedtuple
+from glob import glob
 
 
-# set device
-device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+# download the training logs
+logs_dir = 'training_output'
+if not os.path.exists(logs_dir):
+    r = requests.get("https://pub-e8bbdcbe8f6243b2a9933704a9b1d8bc.r2.dev/parking%2Fpaper_training_output.zip")
+    z = zipfile.ZipFile(io.BytesIO(r.content))
+    z.extractall(logs_dir)
+    
+    
+# # create dicts with model validation and test accuracies
+# va_dict = defaultdict(list)
+# ta_dict = defaultdict(list)
 
-# load dataset
-train_ds, valid_ds, test_ds = acpds.create_datasets('dataset/data')
+# # iterate through model directories
+# for model_dir in sorted(glob(f'{logs_dir}/*')):
+    
+#     # get model id based on model directory
+#     model_id = model_dir.split('/')[-1]
+    
+#     # split model_id into model_name and training_iter
+#     model_name, _ = model_id.rsplit('_', 1)
+    
+#     # read validation accuracy from training logs 
+#     train_log = pd.read_csv(f'{model_dir}/train_log.csv')
+#     va = train_log.valid_accuracy.tolist()
+    
+#     # append logs if they're the first logs of the given model
+#     # or if they're of the same length as the previous logs
+#     # (avoid storing logs of a model that hasn't finished trainig yet) 
+#     if len(va_dict[model_name]) == 0 or len(va_dict[model_name][0]) == len(va):
+#         # read test accuracy from test logs
+#         with open(f'{model_dir}/test_logs.json') as f:
+#             ta = json.load(f)['accuracy']
+            
+#         va_dict[model_name] += [va]
+#         ta_dict[model_name] += [ta]
 
-# set dir to store model weights and logs
-wd = os.path.expanduser('~/Downloads/pd-camera-weights/')
+# # compute accuracy mean and SE for each model
+# Logs = namedtuple('Logs', ['va_mean', 'va_se', 'ta_mean', 'ta_se'])
+# logs = {}
+# for k, v in va_dict.items():
+#     # print number of training iters for each model
+#     print(f'{k}: {len(v)}')
 
-# train each model multiple times
-for i in range(5):
-    # RCNN
-    train_model(RCNN(roi_res=64,  pooling_type='qdrl'),   train_ds, valid_ds, test_ds, f'{wd}/RCNN_64_qdrl_{i}',    device)
-    train_model(RCNN(roi_res=128, pooling_type='qdrl'),   train_ds, valid_ds, test_ds, f'{wd}/RCNN_128_qdrl_{i}',   device)
-    train_model(RCNN(roi_res=256, pooling_type='qdrl'),   train_ds, valid_ds, test_ds, f'{wd}/RCNN_256_qdrl_{i}',   device)
-    train_model(RCNN(roi_res=64,  pooling_type='square'), train_ds, valid_ds, test_ds, f'{wd}/RCNN_64_square_{i}',  device)
-    train_model(RCNN(roi_res=128, pooling_type='square'), train_ds, valid_ds, test_ds, f'{wd}/RCNN_128_square_{i}', device)
-    train_model(RCNN(roi_res=256, pooling_type='square'), train_ds, valid_ds, test_ds, f'{wd}/RCNN_256_square_{i}', device)
+#     # calculate the mean and standard error of valid. accuracy
+#     va = np.array(v)
+#     # va = np.array([ma(x, 10) for x in va])
+#     va_mean = np.mean(va, 0)
+#     va_se = np.std(va, 0) / np.sqrt(va.shape[0])
+    
+#     # calculate the mean and standard error of test accuracy
+#     ta = np.array(ta_dict[k])
+#     ta_mean = np.mean(ta)
+#     ta_se = np.std(ta) / np.sqrt(len(ta))
+    
+#     # save validation and test logs
+#     logs[k] = Logs(va_mean, va_se, ta_mean, ta_se)
+    
+# def ma(x, w=10):
+#     """Moving average."""
+#     return np.convolve(x, np.ones(w), 'valid') / w
 
-    # FasterRCNN_FPN
-    train_model(FasterRCNN_FPN(pooling_type='qdrl'),   train_ds, valid_ds, test_ds, f'{wd}/FasterRCNN_FPN_1440_qdrl_{i}',   device, res=1440)
-    train_model(FasterRCNN_FPN(pooling_type='square'), train_ds, valid_ds, test_ds, f'{wd}/FasterRCNN_FPN_1440_square_{i}', device, res=1440)
-    train_model(FasterRCNN_FPN(pooling_type='qdrl'),   train_ds, valid_ds, test_ds, f'{wd}/FasterRCNN_FPN_1100_qdrl_{i}',   device, res=1100)
-    train_model(FasterRCNN_FPN(pooling_type='square'), train_ds, valid_ds, test_ds, f'{wd}/FasterRCNN_FPN_1100_square_{i}', device, res=1100)
-    train_model(FasterRCNN_FPN(pooling_type='qdrl'),   train_ds, valid_ds, test_ds, f'{wd}/FasterRCNN_FPN_800_qdrl_{i}',    device, res=800)
-    train_model(FasterRCNN_FPN(pooling_type='square'), train_ds, valid_ds, test_ds, f'{wd}/FasterRCNN_FPN_800_square_{i}',  device, res=800)
+# fig, ax = plt.subplots(figsize=[12, 8])
+# for k, v in logs.items():
+#     epochs = np.arange(len(v.va_mean))
+#     plt.plot(epochs, v.va_mean, label=k, linewidth=2)
+    
+# plt.xlabel('Epochs')
+# plt.ylabel('Average Accuracy')
+# ax.legend()
+# ax.set_ylim([0.925, 0.99])
+# plt.savefig("Accuracy vs epochs.png")

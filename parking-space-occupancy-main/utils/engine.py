@@ -113,6 +113,7 @@ def train_model(model, train_ds, valid_ds, test_ds, model_dir, device, lr=1e-4, 
     
     # train
     for epoch in range(1, epochs+1):
+        print("training")
         # train for one epoch
         t0 = time.time()
         train_loss, train_accuracy = train_one_epoch(model, optimizer, train_ds, res)
@@ -142,11 +143,12 @@ def train_model(model, train_ds, valid_ds, test_ds, model_dir, device, lr=1e-4, 
         # save weights
         torch.save(model.state_dict(), f'{model_dir}/weights_last_epoch.pt')
         
-    # test model on test dataset
-    test_loss, test_accuracy = eval_one_epoch(model, test_ds, res)
-    with open(f'{model_dir}/test_logs.json', 'w') as f:
-        json.dump({'loss': test_loss, 'accuracy': test_accuracy}, f)
+    print("done training")
+    # # test model on test dataset
+    # test_loss, test_accuracy = eval_one_epoch(model, test_ds, res)
+    # with open(f'{model_dir}/test_logs.json', 'w') as f:
+    #     json.dump({'loss': test_loss, 'accuracy': test_accuracy}, f)
 
-    # delete model from memory
+    # # delete model from memory
     del model
 

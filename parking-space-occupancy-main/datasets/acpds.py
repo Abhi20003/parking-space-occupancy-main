@@ -66,7 +66,7 @@ def collate_fn(batch):
     images = [item[0] for item in batch]
     rois = [item[1] for item in batch]
     occupancy = [item[2] for item in batch]
-    return [images, rois, occupancy]
+    return images, rois, occupancy   
 
 
 def create_datasets(dataset_path, *args, **kwargs):
