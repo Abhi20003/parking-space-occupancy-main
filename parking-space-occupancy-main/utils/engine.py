@@ -64,7 +64,7 @@ def eval_one_epoch(model, ds, res):
     Expects a dataset.pdosp.PDOSP dataset.
     Outputs accuracy and cross-entropy loss.
     """
-    model.eval();
+    model.eval()
     device = next(model.parameters()).device
     loss_list = []
     label_match_list = []
@@ -106,11 +106,9 @@ def train_model(model, train_ds, valid_ds, test_ds, model_dir, device, lr=1e-4, 
     # transfer model to device
     model = model.to(device)
     
-    print(model.parameters())
     
     # construct an optimizer
     params = [p for p in list(model.parameters()) if p.requires_grad]
-    print(params)
     optimizer = torch.optim.AdamW(params, lr=lr)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, lr_decay, gamma=0.1)
     
