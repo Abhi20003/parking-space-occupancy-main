@@ -114,7 +114,7 @@ def train_model(model, train_ds, valid_ds, test_ds, model_dir, device, lr=1e-4, 
     
     # train
     for epoch in range(1, epochs+1):
-        print("training")
+        print("training ", epoch)
         # train for one epoch
         t0 = time.time()
         train_loss, train_accuracy = train_one_epoch(model, optimizer, train_ds, res)

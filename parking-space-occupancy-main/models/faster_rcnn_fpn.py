@@ -65,7 +65,7 @@ class FasterRCNN_FPN_MobileNetv2(nn.Module):
         
         # backbone
         # by default, uses frozen batchnorm and 3 trainable layers
-        self.backbone = mobilenet_backbone('mobilenet_v2_large', pretrained=True, fpn = True)
+        self.backbone = mobilenet_backbone('mobilenet_v2', pretrained=True, fpn = True)
         hidden_dim = 256
         
         # pooling

@@ -9,8 +9,8 @@ from models.faster_rcnn_fpn import FasterRCNN_FPN_ResNet50, FasterRCNN_FPN_Mobil
 
 
 # set device
-# device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-device = torch.device('cpu')
+device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+# device = torch.device('cpu')
 print(device)
 
 # load dataset
