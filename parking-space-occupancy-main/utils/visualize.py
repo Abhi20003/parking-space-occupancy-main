@@ -111,7 +111,7 @@ def plot_ds_image(image, rois, occupancy, true_occupancy=None, fname=None, show=
     # print(wrong_pred)
     
     # save figure
-    save_fig(fig, fname, show)
+    # save_fig(fig, fname, show)
     count = positives+negatives
     accuracy = 1-(wrong_pred/count)
     return accuracy, count

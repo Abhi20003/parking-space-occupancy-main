@@ -13,11 +13,11 @@ from datasets import acpds
 from utils import transforms
 from utils import visualize as vis
 
-from models.rcnn import RCNN
-from models.faster_rcnn_fpn import FasterRCNN_FPN
+from models.rcnn import RCNN_ResNet50
+from models.faster_rcnn_fpn import FasterRCNN_FPN_MobileNetv2
 from utils.engine import train_model
-from models.rcnn import RCNN
-from models.faster_rcnn_fpn import FasterRCNN_FPN
+from models.rcnn import RCNN_MobileNetv2
+from models.faster_rcnn_fpn import FasterRCNN_FPN_ResNet50
 
 from collections import defaultdict
 from collections import namedtuple
@@ -25,9 +25,12 @@ from glob import glob
 
 
 # # create model
-# modelsRCNN = [RCNN(roi_res=64), RCNN(roi_res=128), RCNN(roi_res=192), RCNN(roi_res=256)]
+models = [RCNN_ResNet50(roi_res=128), RCNN_MobileNetv2(roi_res=128)]
+weights = ["parking-space-occupancy-main/pd-camera-weights/RCNN_ResNet50_128_square_0/weights_last_epoch.pt",
+           "parking-space-occupancy-main/pd-camera-weights/RCNN_MobileNetv2_128_square_0/weights_last_epoch.pt"]
+        #    "parking-space-occupancy-main/pd-camera-weights/FasterRCNN_FPN_MobileNetv3_1440_square_0/weights_last_epoch.pt"]
 # modelsFRCNN = [FasterRCNN_FPN(roi_res=5), FasterRCNN_FPN(roi_res=7), FasterRCNN_FPN(roi_res=10)]
-model = RCNN(roi_res=128, pooling_type='qdrl')
+# model = RCNN(roi_res=128, pooling_type='qdrl')
 
 
 print("dowloding dataset")
@@ -43,7 +46,7 @@ train_ds, valid_ds, test_ds = acpds.create_datasets('dataset/data')
 
 
 # load model weights
-weights_path = 'weights.pt'
+# weights_path = 'weights.pt'
 # if not os.path.exists(weights_path):
 #     r = requests.get('https://pub-e8bbdcbe8f6243b2a9933704a9b1d8bc.r2.dev/parking%2FRCNN_128_square_gopro.pt')
 #     with open(weights_path, 'wb') as f:
@@ -66,31 +69,33 @@ weights_path = 'weights.pt'
 # YFRCNN = [0]*len(modelsFRCNN)
 
 
+for i in range(2):
+    mod_arr = []
+    model = models[i]
+    weights_path = weights[i]
+    model.load_state_dict(torch.load(weights_path, map_location='cpu'))
+    for i, (image_batch, rois_batch, labels_batch) in enumerate(test_ds):
+        image, rois, labels = image_batch[0], rois_batch[0], labels_batch[0]
+        image = transforms.preprocess(image)
+        with torch.no_grad():
+            class_logits = model(image, rois)
+            class_scores = class_logits.softmax(1)[:, 1]
+        L = vis.plot_ds_image(image, rois, class_scores, labels)
+        print(i, L[0], L[1])
+        ele = [L[1], L[0]]
+        mod_arr.insert(0,ele)
+    mod_arr.sort(key = lambda x: x[0])
+    Xarr, Yarr = np.array(mod_arr).T
+    # print(lsRCNN[j], np.average(Yarr), "done")
+    # YRCNN[j] = np.average(Yarr)
+plt.figure(1)
+plt.plot(Xarr, Yarr)
 
-model.load_state_dict(torch.load(weights_path, map_location='cpu'))
-for i, (image_batch, rois_batch, labels_batch) in enumerate(test_ds):
-    if i==5: break
-    image, rois = image_batch[0], rois_batch[0]
-    image = transforms.preprocess(image)
-    with torch.no_grad():
-        class_logits = model(image, rois)
-        class_scores = class_logits.softmax(1)[:, 1]
-    L = vis.plot_ds_image(image, rois, class_scores)
-    # print(i, L[0], L[1])
-    # ele = [L[1], L[0]]
-    # mod_arr.insert(0,ele)
-# mod_arr.sort(key = lambda x: x[0])
-# Xarr, Yarr = np.array(mod_arr).T
-# print(lsRCNN[j], np.average(Yarr), "done")
-# YRCNN[j] = np.average(Yarr)
-# plt.figure(1)
-# plt.plot(Xarr, Yarr, label=lsRCNN[j])
-
-# plt.title('RCNN model')
-# plt.xlabel('Number of Parking Spaces')
-# plt.ylabel('Accuracy')
-# plt.legend()
-# plt.savefig("1.png")
+plt.title('RCNN model')
+plt.xlabel('Number of Parking Spaces')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.savefig("1.png")
 
 # plt.figure(2)
 # plt.plot(XRCNN, YRCNN)
